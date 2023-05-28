@@ -108,3 +108,35 @@ void send_shared_memory(key_t key) {
         // Print server response
         printf("Server response: %s\n", shared_memory->message);
     }
+    // Detach shared memory
+    shmdt(shared_memory);
+}
+
+void send_pipes() {
+    int pipe_fd[2];
+
+    // Create a pipe for client communication
+    if (pipe(pipe_fd) == -1) {
+        perror("Failed to create pipe");
+        exit(EXIT_FAILURE);
+    }
+
+    // Fork a child process to handle the server response
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("Failed to fork");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        // Child process
+
+        // Close the write end of the pipe
+        close(pipe_fd[1]);
+
+        struct Response response;
+
+        // Read server response from the pipe
+        read(pipe_fd[0], &response, sizeof(struct Response));
+
+        // Print server response
+        printf("Server response: %s", response.message);
