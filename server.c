@@ -97,3 +97,64 @@ void* handle_client(void* arg) {
 
     return NULL;
 }
+
+void handle_message_passing() {
+    pthread_t threads[MAX_CLIENTS];
+
+    while (1) {
+        struct Request request;
+
+        // Receive client request from the message queue
+        msgrcv(message_queue, &request, sizeof(struct Request) - sizeof(long), 0, 0);
+
+        // Acquire the mutex to handle the client request
+        pthread_mutex_lock(&mutex);
+
+        // Check if the maximum number of clients is reached
+        if (client_count < MAX_CLIENTS) {
+            // Create a new thread to handle the client request
+            pthread_create(&threads[client_count], NULL, handle_client, (void*) &request);
+
+            // Increase client count
+            client_count++;
+        } else {
+            printf("Maximum number of clients reached. Rejecting client %ld\n", request.client_id);
+            // Handle the rejection or send an appropriate response to the client
+            // ...
+        }
+    }
+}
+
+void handle_shared_memory() {
+    while (1) {
+        // Wait for the client request
+        while (shared_memory->client_id == 0) {
+            sleep(1);
+        }
+
+        // Acquire the mutex to handle the client request
+        pthread_mutex_lock(&mutex);
+
+        // Check if the maximum number of clients is reached
+        if (client_count < MAX_CLIENTS) {
+            // Create a copy of the client request
+            struct Request request;
+            request.client_id = shared_memory->client_id;
+            strncpy(request.message, shared_memory->message, MAX_MESSAGE_SIZE);
+
+            // Reset the shared memory
+            shared_memory->client_id = 0;
+            memset(shared_memory->message, 0, MAX_MESSAGE_SIZE);
+
+            // Create a new thread to handle the client request
+            pthread_t thread;
+            pthread_create(&thread, NULL, handle_client, (void*) &request);
+
+            // Increase client count
+            client_count++;
+        } else {
+            // Handle the rejection or send an appropriate response to the client
+            // ...
+        }
+    }
+}
