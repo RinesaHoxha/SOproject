@@ -140,3 +140,32 @@ void send_pipes() {
 
         // Print server response
         printf("Server response: %s", response.message);
+        
+         // Close the read end of the pipe
+        close(pipe_fd[0]);
+
+        // Exit the child process
+        exit(EXIT_SUCCESS);
+    } else {
+        // Parent process
+
+        // Close the read end of the pipe
+        close(pipe_fd[0]);
+
+        struct Request request;
+
+        // Prepare client request
+        request.client_id = pid;
+        printf("Enter your message: ");
+        fgets(request.message, MAX_MESSAGE_SIZE, stdin);
+
+        // Write client request to the pipe
+        write(pipe_fd[1], &request, sizeof(struct Request));
+
+        // Close the write end of the pipe
+        close(pipe_fd[1]);
+
+        // Wait for the child process to finish
+        wait(NULL);
+    }
+}
