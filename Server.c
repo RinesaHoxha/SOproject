@@ -158,3 +158,62 @@ void handle_shared_memory() {
         }
     }
 }
+
+void handle_pipes() {
+    while (1) {
+        int pipe_fd[2];
+
+        // Create a pipe for client communication
+        if (pipe(pipe_fd) == -1) {
+            perror("Failed to create pipe");
+            exit(EXIT_FAILURE);
+        }
+
+        // Fork a child process to handle the client request
+        pid_t pid = fork();
+
+        if (pid == -1) {
+            perror("Failed to fork");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            // Child process
+
+            // Close the write end of the pipe
+            close(pipe_fd[1]);
+
+            struct Request request;
+
+            // Read client request from the pipe
+            read(pipe_fd[0], &request, sizeof(struct Request));
+
+            // Handle the client request
+            handle_client(&request);
+
+            // Close the read end of the pipe
+            close(pipe_fd[0]);
+
+            // Exit the child process
+            exit(EXIT_SUCCESS);
+        } else {
+            // Parent process
+
+            // Close the read end of the pipe
+            close(pipe_fd[0]);
+
+            struct Response response;
+
+            // Prepare server response
+            printf("Enter your response: ");
+            fgets(response.message, MAX_MESSAGE_SIZE, stdin);
+
+            // Write server response to the pipe
+            write(pipe_fd[1], &response, sizeof(struct Response));
+
+            // Close the write end of the pipe
+            close(pipe_fd[1]);
+
+            // Wait for the child process to finish
+            wait(NULL);
+        }
+    }
+}
