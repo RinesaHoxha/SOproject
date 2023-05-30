@@ -100,28 +100,42 @@ void* handle_client(void* arg) {
 
 void handle_message_passing() {
     pthread_t threads[MAX_CLIENTS];
-
+    long registered_clients[MAX_CLIENTS] = {0};  // Array to keep track of registered clients
+    int registered_count = 0;  // Number of registered clients
     while (1) {
         struct Request request;
-
         // Receive client request from the message queue
         msgrcv(message_queue, &request, sizeof(struct Request) - sizeof(long), 0, 0);
-
         // Acquire the mutex to handle the client request
         pthread_mutex_lock(&mutex);
-
-        // Check if the maximum number of clients is reached
-        if (client_count < MAX_CLIENTS) {
-            // Create a new thread to handle the client request
-            pthread_create(&threads[client_count], NULL, handle_client, (void*) &request);
-
-            // Increase client count
-            client_count++;
-        } else {
-            printf("Maximum number of clients reached. Rejecting client %ld\n", request.client_id);
-            // Handle the rejection or send an appropriate response to the client
-            // ...
+        // Register the client if it is not already registered
+        int is_registered = 0;
+        for (int i = 0; i < registered_count; i++) {
+            if (registered_clients[i] == request.client_id) {
+                is_registered = 1;
+                break;
+            }
         }
+        if (!is_registered) {
+            registered_clients[registered_count] = request.client_id;
+            registered_count++;
+        }
+        // Check if the client should be rejected
+        if (registered_count > MAX_CLIENTS && request.client_id > MAX_CLIENTS) {
+            printf("Client %ld is rejected.\n", request.client_id);
+            // Handle the rejection or send an appropriate response to the client   
+            // Release the mutex
+            pthread_mutex_unlock(&mutex);
+            continue;  // Skip creating the thread for the rejected client
+        }
+        // Create a new thread to handle the client request
+        pthread_create(&threads[client_count], NULL, handle_client, (void*) &request);
+        // Increase client count only if the client is not already registered
+        if (!is_registered) {
+            client_count++;
+        }
+        // Release the mutex
+        pthread_mutex_unlock(&mutex);
     }
 }
 
