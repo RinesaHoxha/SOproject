@@ -1,14 +1,6 @@
-Ky projekt është realizuar nga grupi 34 në lëndën Sisteme Operative.
+Dizajnimi dhe zbatimi i një sistemi të shpërndarë duke përdorur IPC, threads dhe
+sinkronizim në C në Linux. Pra projekti u be ne gjuhen C ne Sistemin Operativ Ubuntu.
 
-Detyra e grupit tone ishte te dizajnojme dhe zbatojme një sistem të shpërndarë duke përdorur IPC, threads dhe
-sinkronizimi në C në Linux. Pra projekti u be ne gjuhen C ne Sistemin Operativ Ubuntu.
-
-
-Projekti u punua nga: 
-Rinesa Hoxha,
-Rinesa Nura, 
-Festim Krasniqi,
-Gentrit Ademi
 
 Hapat e ekzekutimit:
 
